@@ -116,3 +116,20 @@ def row_to_array(r):
     #a = np.array(r.as_void().tolist())
     a = np.ma.array([i for i in r.as_void()])
     return a
+
+def rms(x):
+    """ 
+    Compute root-mean-square of an array
+    """
+    rms = np.sqrt(np.nansum(np.square(x))/np.float(np.sum(~np.isnan(x))))
+    return rms
+
+def nmad(x):
+    """
+    Compute normalized median absolute deviation
+    """
+    k = 1.4826 # normalization
+    m = np.nanmedian(x)
+    nmad = k * np.nanmedian(np.absolute(x - m))
+    return nmad
+
