@@ -6,6 +6,7 @@ Python
 ------
 
 **Requirements**
+
 The following Python packages are needed:
 - numpy
 - astropy
