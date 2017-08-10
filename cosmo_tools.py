@@ -16,8 +16,8 @@ def redshift_to(zi, zf, wi, fi, cos, adjust_f=True, in_Hz=False):
     Redshift or de-redshift a spectrum
     zi = initial redshift (redshift of input data)
     zf = final redshift (redshift of output data)
-    wi = initial wavelength vector (Angstroms)
-    fi = intial flux vector (Angstroms)
+    wi = initial wavelength vector in Angstroms (AA)
+    fi = intial flux vector in Angstroms (AA)
     cos = astropy.cosmology object
     adjust_f = whether or not to modify the flux by the appropriate (1+z) factors
     in_Hz = whether or not the input spectrum is in units of Hz^-1 (vs. AA^-1)
@@ -85,7 +85,7 @@ def flux_to_ABmag(f, ZP=-48.6):
     Convert flux density to AB magnitude 
     assuming ZP = -48.6, unless specified otherwise
     """
-    m = -2.5*np.ma.log10(f) + ZP # zeropoint from data files
+    m = -2.5*np.ma.log10(f) + ZP
     return m
 
 def ABmagerr_to_fluxerr(merr, f):
@@ -113,20 +113,19 @@ def row_to_array(r):
     """
     Convert astropy row to masked numpy array
     """
-    #a = np.array(r.as_void().tolist())
     a = np.ma.array([i for i in r.as_void()])
     return a
 
 def rms(x):
     """ 
-    Compute root-mean-square of an array
+    Compute root-mean-square of x
     """
     rms = np.sqrt(np.nansum(np.square(x))/np.float(np.sum(~np.isnan(x))))
     return rms
 
 def nmad(x):
     """
-    Compute normalized median absolute deviation
+    Compute normalized median absolute deviation of x
     """
     k = 1.4826 # normalization
     m = np.nanmedian(x)
