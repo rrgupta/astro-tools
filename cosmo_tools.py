@@ -85,7 +85,9 @@ def flux_to_ABmag(f, ZP=-48.6):
     Convert flux density to AB magnitude 
     assuming ZP = -48.6, unless specified otherwise
     """
-    m = -2.5*np.ma.log10(f) + ZP
+    # RuntimeWarning for f<=0, but preserves masking and NaNs
+    # np.ma.log10 suppresses RuntimeWarning but masks NaNs
+    m = -2.5*np.log10(f) + ZP
     return m
 
 def ABmagerr_to_fluxerr(merr, f):
