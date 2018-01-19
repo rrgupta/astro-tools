@@ -9,7 +9,7 @@ import astropy.cosmology as cosmo
 import astropy.units as u
 import astropy.constants as const
 from scipy import interpolate
-import sncosmo
+from scipy.special import gammainc, gamma
 
 def redshift_to(zi, zf, wi, fi, cos, adjust_f=True, in_Hz=False):
     """
@@ -65,6 +65,7 @@ def integrate_ABmag(wave, flux, bandname, funit=(u.erg / (u.s * u.cm**2 * u.AA))
     flux = flux (default in erg/s/cm^2/Ang)
     bandname = sncosmo band name (string)
     """
+    import sncosmo
     spectrum = sncosmo.Spectrum(wave, flux, unit=funit)
     band = sncosmo.get_bandpass(bandname)
     f = spectrum.bandflux(band)
@@ -133,4 +134,35 @@ def nmad(x):
     m = np.nanmedian(x)
     nmad = k * np.nanmedian(np.absolute(x - m))
     return nmad
+
+def b_n(n):
+    """
+    Compute approximation of b_n (constant in Sersic profile).
+    For 1 <~ n < 10, use Ciotti & Bertin (1999) approximation which has a 
+    relative error < 10^-6. For n <= 0.36, use MacArthur, Courteau, & Holtzman 
+    (2003) which is accurate to 0.002.
+    """
+    if n <= 0.36: # MCH03
+        ei  = np.array([0, 1, 2, 3, 4])
+        ai  = np.array([0.01945, -0.8902, 10.95, -19.67, 13.43])
+    else: # CB99
+        ei  = np.array([1, 0, -1, -2])
+        ai  = np.array([2, -1./3, 4./405, 46./25515])
+    return np.sum(ai * np.power(float(n), ei))
+
+def RKron_from_Sersic(R, Re, n):
+    """
+    Compute the Kron radius given Sersic parameters using Eq. 32 in 
+    Graham & Driver (2005). 
+    R  = radius to integrate out to
+    Re = effective radius (in Sersic profile definition)
+    n  = Sersic index
+    Kron magnitudes (SExtractor mag_auto) use 2.5*RKron.
+    Output units are same units as input R, Re
+    """
+    b = b_n(n)
+    x = b * np.power(float(R)/Re, 1./n)
+    norm = gamma(3*n) / gamma(2*n) # scipy gammainc has 1/Gamma(a) prefactor
+    R_K = (Re/b**n) * gammainc(3*n, x)/gammainc(2*n, x) * norm 
+    return R_K
 
