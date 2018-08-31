@@ -9,7 +9,6 @@ import astropy.cosmology as cosmo
 import astropy.units as u
 import astropy.constants as const
 from scipy import interpolate
-from scipy.special import gammainc, gamma
 
 def redshift_to(zi, zf, wi, fi, cos, adjust_f=True, in_Hz=False):
     """
@@ -17,11 +16,11 @@ def redshift_to(zi, zf, wi, fi, cos, adjust_f=True, in_Hz=False):
     zi = initial redshift (redshift of input data)
     zf = final redshift (redshift of output data)
     wi = initial wavelength vector in Angstroms (AA)
-    fi = intial flux vector in Angstroms (AA)
+    fi = intial flux vector in units of s^-1 cm^-2 AA^-1 (or Hz^-1) [see in_Hz]
     cos = astropy.cosmology object
     adjust_f = whether or not to modify the flux by the appropriate (1+z) factors
     in_Hz = whether or not the input spectrum is in units of Hz^-1 (vs. AA^-1)
-    Outputs flux density in flux per AA
+    Outputs flux density in flux s^-1 cm^-2 AA^-1
     """
     # First convert wavelengths
     wf = wi * (1 + zf)/(1 + zi)
@@ -34,15 +33,15 @@ def redshift_to(zi, zf, wi, fi, cos, adjust_f=True, in_Hz=False):
     else: # otherwise, rescale flux
         # Check z=0 cases
         if zi == 0:
-            D_Lzi = 1./(2*m.sqrt(np.pi))*u.cm
+            D_Lzi = 1. / (2*m.sqrt(np.pi)) * u.cm
         else:
             D_Lzi = cos.luminosity_distance(zi).to('cm') # luminosity distance
         if zf == 0:
-            D_Lzf = 1./(2*m.sqrt(np.pi))*u.cm
+            D_Lzf = 1. / (2*m.sqrt(np.pi)) * u.cm
         else:
             D_Lzf = cos.luminosity_distance(zf).to('cm')
         ff = np.array(fi, dtype=np.float64) * (D_Lzi/D_Lzf)**2 * (1 + zi)/(1 + zf)
-    return wf, ff
+    return wf, ff.value
 
 def get_z_at_age(A, cos, zmax=2):
     """
@@ -88,21 +87,21 @@ def flux_to_ABmag(f, ZP=-48.6):
     """
     # RuntimeWarning for f<=0, but preserves masking and NaNs
     # np.ma.log10 suppresses RuntimeWarning but masks NaNs
-    m = -2.5*np.log10(f) + ZP
+    m = -2.5 * np.log10(f) + ZP
     return m
 
 def ABmagerr_to_fluxerr(merr, f):
     """
     Convert AB magnitude errors to flux errors
     """
-    ferr = (m.log(10)/2.5)*merr*f
+    ferr = (m.log(10)/2.5) * merr * f
     return np.fabs(ferr)
 
 def fluxerr_to_ABmagerr(ferr, f):
     """
     Convert flux errors to AB magnitude errors
     """
-    merr = (ferr/f)*(2.5/m.log(10))
+    merr = (ferr/f) * (2.5/m.log(10))
     return np.fabs(merr)
     
 def add_quad(a, b):
@@ -160,6 +159,7 @@ def RKron_from_Sersic(R, Re, n):
     Kron magnitudes (SExtractor mag_auto) use 2.5*RKron.
     Output units are same units as input R, Re
     """
+    from scipy.special import gammainc, gamma
     b = b_n(n)
     x = b * np.power(float(R)/Re, 1./n)
     norm = gamma(3*n) / gamma(2*n) # scipy gammainc has 1/Gamma(a) prefactor
