@@ -166,3 +166,19 @@ def RKron_from_Sersic(R, Re, n):
     R_K = (Re/b**n) * gammainc(3*n, x)/gammainc(2*n, x) * norm 
     return R_K
 
+def chauvenet(x):
+    """
+    Use Chauvenet's criterion to determine which elements of array x are 
+    outliers and output a mask where for each element, T=keep and F=reject.
+    NOTE: This method assumes that x is drawn from a Gaussian distribution.
+    """
+    from scipy.stats import norm
+    x = np.array(x)
+    n = len(x)
+    mean = np.mean(x)
+    sigma = np.std(x, ddof=1) # sample standard deviation (divide by N-1)
+    dev = np.abs(x - mean) / sigma # normalized deviation
+    crit = 1. / (2*n) # Chauvenet's criterion
+    prob = 2 * norm.sf(dev) # probability of obtaining deviations larger than dev
+    mask = prob >= crit # reject if prob is less than criterion
+    return mask
