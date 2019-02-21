@@ -41,7 +41,8 @@ def redshift_to(zi, zf, wi, fi, cos, adjust_f=True, in_Hz=False):
         else:
             D_Lzf = cos.luminosity_distance(zf).to('cm')
         ff = np.array(fi, dtype=np.float64) * (D_Lzi/D_Lzf)**2 * (1 + zi)/(1 + zf)
-    return wf, ff.value
+        ff = ff.value
+    return wf, ff
 
 def get_z_at_age(A, cos, zmax=2):
     """
