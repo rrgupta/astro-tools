@@ -185,3 +185,41 @@ def chauvenet(x):
     prob = 2 * norm.sf(dev) # probability of obtaining deviations > dev
     mask = prob >= crit # reject if prob is less than criterion
     return mask
+
+def get_dzCMB(ra, dec):
+    """
+    Compute the peculiar velocity of your object, located at (ra, dec) given in 
+    degrees, in redshift-space relative to the direction of the CMB dipole. 
+    Used for the functions below that convert redshifts between heliocentric 
+    and CMB frame. Based on code from David Rubin. Tested against Betoule+ 2014 
+    JLA data file jla_lcparams.txt.
+    """
+    from astropy.coordinates import SkyCoord
+    # from https://ned.ipac.caltech.edu/help/velc_help.html#notes
+    # ApJ 473, 576, 1996
+    lapex, bapex = 264.14 * u.deg, 48.26 * u.deg # CMB dipole in galactic coords
+    vapex = 371.0 * u.km/u.s # relative velocity of Sun to CMB dipole
+    z_CMB = (vapex / const.c.to('km/s')).value
+    coord_CMB = SkyCoord(l=lapex, b=bapex, frame='galactic')
+    coord_obj = SkyCoord(ra=ra, dec=dec, unit=u.deg, frame='icrs')
+    dz = z_CMB * np.dot(coord_CMB.icrs.cartesian.xyz.value,
+                        coord_obj.cartesian.xyz.value)
+    return dz
+
+def z_helio_to_cmb(ra, dec, z_helio):
+    """
+    Convert heliocentric redshift to CMB frame given (ra, dec) in deg
+    """
+    dz = -get_dzCMB(ra, dec)
+    z_pec = np.sqrt((1. + dz) / (1. - dz)) - 1
+    z_CMB = (1. + z_helio)/(1. + z_pec) - 1
+    return z_CMB
+
+def z_cmb_to_helio(ra, dec, z_cmb):
+    """
+    Convert CMB redshift to heliocentric frame given (ra, dec) in deg
+    """
+    dz = get_dzCMB(ra, dec)
+    z_pec = np.sqrt((1. + dz) / (1. - dz)) - 1
+    z_helio = (1. + z_cmb)*(1. + z_pec) - 1
+    return z_helio
