@@ -219,7 +219,7 @@ def z_cmb_to_helio(ra, dec, z_cmb):
     """
     Convert CMB redshift to heliocentric frame given (ra, dec) in deg
     """
-    dz = get_dzCMB(ra, dec)
+    dz = -get_dzCMB(ra, dec)
     z_pec = np.sqrt((1. + dz) / (1. - dz)) - 1
     z_helio = (1. + z_cmb)*(1. + z_pec) - 1
     return z_helio
