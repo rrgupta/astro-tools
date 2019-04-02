@@ -8,7 +8,6 @@ import numpy as np
 import astropy.cosmology as cosmo
 import astropy.units as u
 import astropy.constants as const
-from scipy import interpolate
 
 def redshift_to(zi, zf, wi, fi, cos, adjust_f=True, in_Hz=False):
     """
@@ -51,6 +50,7 @@ def get_z_at_age(A, cos, zmax=2):
     A = age at which to get redshift
     cos = astropy.cosmology object
     """
+    from scipy import interpolate
     z = np.linspace(0, zmax, num=10000)
     age = cos.age(z).value # age of universe in Gyr
     f = interpolate.interp1d(age, z)
@@ -183,7 +183,7 @@ def chauvenet(x):
     dev = np.abs(x - mean) / sigma # normalized deviation
     crit = 1. / (2*n) # Chauvenet's criterion
     prob = 2 * norm.sf(dev) # probability of obtaining deviations > dev
-    mask = prob >= crit # reject if prob is less than criterion
+    mask = prob >= crit # reject if probability is less than criterion
     return mask
 
 def get_dzCMB(ra, dec):
@@ -192,7 +192,8 @@ def get_dzCMB(ra, dec):
     degrees, in redshift-space relative to the direction of the CMB dipole. 
     Used for the functions below that convert redshifts between heliocentric 
     and CMB frame. Based on code from David Rubin. Tested against Betoule+ 2014 
-    JLA data file jla_lcparams.txt.
+    JLA data file jla_lcparams.txt; agreement gets worse for z<0.1 but 
+    differences from JLA are <0.004.
     """
     from astropy.coordinates import SkyCoord
     # from https://ned.ipac.caltech.edu/help/velc_help.html#notes
@@ -208,7 +209,7 @@ def get_dzCMB(ra, dec):
 
 def z_helio_to_cmb(ra, dec, z_helio):
     """
-    Convert heliocentric redshift to CMB frame given (ra, dec) in deg
+    Convert heliocentric redshift to CMB frame given (ra, dec) [in deg, J2000]
     """
     dz = -get_dzCMB(ra, dec)
     z_pec = np.sqrt((1. + dz) / (1. - dz)) - 1
@@ -217,7 +218,7 @@ def z_helio_to_cmb(ra, dec, z_helio):
 
 def z_cmb_to_helio(ra, dec, z_cmb):
     """
-    Convert CMB redshift to heliocentric frame given (ra, dec) in deg
+    Convert CMB redshift to heliocentric frame given (ra, dec) [in deg, J2000]
     """
     dz = -get_dzCMB(ra, dec)
     z_pec = np.sqrt((1. + dz) / (1. - dz)) - 1
