@@ -9,6 +9,60 @@ import astropy.cosmology as cosmo
 import astropy.units as u
 import astropy.constants as const
 
+################################## STATISTICS ##################################
+def add_quad(a, b):
+    """
+    Add 2 quantities (a and b) in quadrature
+    """
+    s = np.sqrt(np.square(a) + np.square(b))
+    return s
+
+def rms(x):
+    """ 
+    Compute root-mean-square of x
+    """
+    rms = np.sqrt(np.nansum(np.square(x))/np.float(np.sum(~np.isnan(x))))
+    return rms
+
+def nmad(x):
+    """
+    Compute normalized median absolute deviation of x
+    """
+    k = 1.4826 # normalization
+    m = np.nanmedian(x)
+    nmad = k * np.nanmedian(np.absolute(x - m))
+    return nmad
+
+def wt_std(x, w):
+    """
+    Compute weighted standard deviation of x with weights w
+    """
+    xw = np.average(x, weights=w) # weighted average
+    Nnz = np.count_nonzero(x) # number of non-zero weights
+    vw = np.average(np.square(x-xw), weights=w)*Nnz/(Nnz-1) # weighted variance
+    return m.sqrt(vw)
+    
+def chauvenet(x):
+    """
+    Use Chauvenet's criterion to determine which elements of array x are 
+    outliers and output a mask where for each element, T=keep and F=reject.
+    NOTE: This method assumes that x is drawn from a Gaussian distribution.
+    This function has been tested using examples from Ch. 6 of John R. Taylor's 
+    book Error Analysis, 2nd edition
+    """
+    from scipy.stats import norm
+    x = np.array(x)
+    n = len(x)
+    mean = np.mean(x)
+    sigma = np.std(x, ddof=1) # sample standard deviation (divide by N-1)
+    dev = np.abs(x - mean) / sigma # normalized deviation
+    crit = 1. / (2*n) # Chauvenet's criterion
+    prob = 2 * norm.sf(dev) # probability of obtaining deviations > dev
+    mask = prob >= crit # reject if probability is less than criterion
+    return mask
+
+################################# ASTRO/COSMO ##################################
+
 def redshift_to(zi, zf, wi, fi, cos, adjust_f=True, in_Hz=False):
     """
     Redshift or de-redshift a spectrum
@@ -105,36 +159,6 @@ def fluxerr_to_ABmagerr(ferr, f):
     merr = (ferr/f) * (2.5/m.log(10))
     return np.fabs(merr)
     
-def add_quad(a, b):
-    """
-    Add 2 quantities (a and b) in quadrature
-    """
-    s = np.sqrt(np.square(a) + np.square(b))
-    return s
-
-def row_to_array(r):
-    """
-    Convert astropy row to masked numpy array
-    """
-    a = np.ma.array([i for i in r.as_void()])
-    return a
-
-def rms(x):
-    """ 
-    Compute root-mean-square of x
-    """
-    rms = np.sqrt(np.nansum(np.square(x))/np.float(np.sum(~np.isnan(x))))
-    return rms
-
-def nmad(x):
-    """
-    Compute normalized median absolute deviation of x
-    """
-    k = 1.4826 # normalization
-    m = np.nanmedian(x)
-    nmad = k * np.nanmedian(np.absolute(x - m))
-    return nmad
-
 def b_n(n):
     """
     Compute approximation of b_n (constant in Sersic profile).
@@ -166,25 +190,6 @@ def RKron_from_Sersic(R, Re, n):
     norm = gamma(3*n) / gamma(2*n) # scipy gammainc has 1/Gamma(a) prefactor
     R_K = (Re/b**n) * gammainc(3*n, x)/gammainc(2*n, x) * norm 
     return R_K
-
-def chauvenet(x):
-    """
-    Use Chauvenet's criterion to determine which elements of array x are 
-    outliers and output a mask where for each element, T=keep and F=reject.
-    NOTE: This method assumes that x is drawn from a Gaussian distribution.
-    This function has been tested using examples from Ch. 6 of John R. Taylor's 
-    book Error Analysis, 2nd edition
-    """
-    from scipy.stats import norm
-    x = np.array(x)
-    n = len(x)
-    mean = np.mean(x)
-    sigma = np.std(x, ddof=1) # sample standard deviation (divide by N-1)
-    dev = np.abs(x - mean) / sigma # normalized deviation
-    crit = 1. / (2*n) # Chauvenet's criterion
-    prob = 2 * norm.sf(dev) # probability of obtaining deviations > dev
-    mask = prob >= crit # reject if probability is less than criterion
-    return mask
 
 def get_dzCMB(ra, dec):
     """
@@ -224,3 +229,12 @@ def z_cmb_to_helio(ra, dec, z_cmb):
     z_pec = np.sqrt((1. + dz) / (1. - dz)) - 1
     z_helio = (1. + z_cmb)*(1. + z_pec) - 1
     return z_helio
+
+################################ MISCELLANCEOUS ################################
+
+def row_to_array(r):
+    """
+    Convert astropy row to masked numpy array
+    """
+    a = np.ma.array([i for i in r.as_void()])
+    return a
