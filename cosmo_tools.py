@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """
-Useful functions such as the ability to take a spectrum at some redshift, 
-shift it to some different redshift and output the new wavelength and flux.
+Useful functions for summary statistics and astrophysics applications, such as 
+* Redshift/de-redshift an SED
+* Convert between flux and AB magnitudes
+* Convert between CMB-frame and heliocentric redshifts
 """
 import math as m
 import numpy as np
@@ -109,7 +111,6 @@ def get_z_at_age(A, cos, zmax=2):
     age = cos.age(z).value # age of universe in Gyr
     f = interpolate.interp1d(age, z)
     return f(A)
-
 
 def integrate_ABmag(wave, flux, bandname, funit=(u.erg / (u.s * u.cm**2 * u.AA))):
     """
@@ -230,7 +231,7 @@ def z_cmb_to_helio(ra, dec, z_cmb):
     z_helio = (1. + z_cmb)*(1. + z_pec) - 1
     return z_helio
 
-################################ MISCELLANCEOUS ################################
+################################ MISCELLANEOUS ################################
 
 def row_to_array(r):
     """
